@@ -89,7 +89,7 @@ def flag_summary(ds: xr.Dataset) -> str:
 def get_var_flags(ds: xr.Dataset, var_name) -> xr.DataArray:
     return ds['flag'].sel(f_string=ds[var_name].qcindex)
 
-def to_samos_netcdf(ds: xr.Dataset, filepath, format = 'NETCDF3_CLASSIC', time_units = 'minutes since 1980-1-1 0:0:0', **kwargs):
+def to_samos_netcdf(ds: xr.Dataset, filepath, format = 'NETCDF3_CLASSIC', time_units = 'minutes since 1980-1-1 0:0:0', fix_dims = True, **kwargs):
     encoding = {
         'time': {'units': time_units}
     }
@@ -100,30 +100,31 @@ def to_samos_netcdf(ds: xr.Dataset, filepath, format = 'NETCDF3_CLASSIC', time_u
 
     ds.to_netcdf(filepath, encoding=encoding, format=format, **kwargs)
 
-    # the following commands require NCO to be installed
-    # https://nco.sourceforge.net/nco.html
+    if fix_dims:
+        # the following commands require NCO to be installed
+        # https://nco.sourceforge.net/nco.html
 
-    # this command removes the string1 dimension that xarray adds to the file by "averaging over it"
-    ncwa_command = f'ncwa -O -C -a string1 {filepath} {filepath}'
-    
-    # this command removes the cell_methods attribute that is created when "averaging over" the string1 dimension
-    ncatted_command = f'ncatted -a cell_methods,flag,d,, -a cell_methods,history,d,, {filepath}'
-    
-    logging.info(ncwa_command)
-    result = subprocess.run(ncwa_command, shell=True, capture_output=True)
+        # this command removes the string1 dimension that xarray adds to the file by "averaging over it"
+        ncwa_command = f'ncwa -O -C -a string1 {filepath} {filepath}'
+        
+        # this command removes the cell_methods attribute that is created when "averaging over" the string1 dimension
+        ncatted_command = f'ncatted -a cell_methods,flag,d,, -a cell_methods,history,d,, {filepath}'
+        
+        logging.info(ncwa_command)
+        result = subprocess.run(ncwa_command, shell=True, capture_output=True)
 
-    if result.stderr != b'':
-        error = f"{result.args} {result.stdout.decode('utf-8')} {result.stderr.decode('utf-8')}"
-        logging.error(error)
-        raise Exception(error)
+        if result.stderr != b'':
+            error = f"{result.args} {result.stdout.decode('utf-8')} {result.stderr.decode('utf-8')}"
+            logging.error(error)
+            raise Exception(error)
 
-    logging.info(ncatted_command)
-    result = subprocess.run(ncatted_command, shell=True, capture_output=True)
+        logging.info(ncatted_command)
+        result = subprocess.run(ncatted_command, shell=True, capture_output=True)
 
-    if result.stderr != b'':
-        error = f"{result.args} {result.stdout.decode('utf-8')} {result.stderr.decode('utf-8')}"
-        logging.error(error)
-        raise Exception(error)
+        if result.stderr != b'':
+            error = f"{result.args} {result.stdout.decode('utf-8')} {result.stderr.decode('utf-8')}"
+            logging.error(error)
+            raise Exception(error)
 
 def open_dataset(filepath, good_flags: list = None, bad_flags: list = None, fix_rh_over_100: bool = True) -> xr.Dataset:
     '''
