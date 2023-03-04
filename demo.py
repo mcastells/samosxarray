@@ -11,7 +11,7 @@ if __name__ == '__main__':
     ds = sx.open_dataset(filepath)
 
     print(ds)
-    print(sx.flag_summary(ds))
+    print(sx.ds_flag_summary(ds))
 
     dewpoint = mpcalc.dewpoint_from_relative_humidity(temperature=ds['T'].metpy.quantify(), relative_humidity=ds['RH'].metpy.quantify())
      
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     ds = sx.open_dataset('demo.nc')
 
     print(ds)
-    print(sx.flag_summary(ds))
+    print(sx.ds_flag_summary(ds))
 
     ds.close()
 

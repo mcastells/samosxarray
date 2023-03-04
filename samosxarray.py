@@ -69,10 +69,13 @@ def nan_flags(ds: xr.Dataset, good_flags: list = None, bad_flags: list = None) -
 
     return ds
 
-def flag_summary(ds: xr.Dataset) -> str:
+def ds_flag_summary(ds: xr.Dataset) -> str:
     output = '\nSAMOS flags:'
 
-    for var_name, da in ds.items():
+    for var_name in ds.keys():
+        output += var_flag_summary(ds, var_name)
+
+    '''for var_name, da in ds.items():
         if da.dims==('time',) and hasattr(da, 'units'):
             output += f'\n    {var_name} ({da.attrs["units"]}) [{da.attrs["long_name"]} ({da.attrs["original_units"]})]'
             flags, flag_counts = np.unique(get_var_flags(ds,var_name).data, return_counts=True)
@@ -83,10 +86,29 @@ def flag_summary(ds: xr.Dataset) -> str:
                 except AttributeError as err:
                     logging.warning(err)
                 output += f': {flag_count} ({100*flag_count/ds.time.size:.1f}%)'
+'''
 
     return output
 
-def get_var_flags(ds: xr.Dataset, var_name) -> xr.DataArray:
+def var_flag_summary(ds: xr.Dataset, var_name: str) -> str:
+    da = ds[var_name]
+
+    output = ''
+
+    if da.dims==('time',) and hasattr(da, 'units'):
+        output += f'\n    {var_name} ({da.attrs["units"]}) [{da.attrs["long_name"]} ({da.attrs["original_units"]})]'
+        flags, flag_counts = np.unique(get_var_flags(ds,var_name).data, return_counts=True)
+        for flag, flag_count in zip(flags, flag_counts):
+            output += f'\n        {flag.decode()}'
+            try:
+                output += f' ({ds.flag.attrs[flag.decode()]})'
+            except AttributeError as err:
+                logging.warning(err)
+            output += f': {flag_count} ({100*flag_count/ds.time.size:.1f}%)'
+
+    return output
+
+def get_var_flags(ds: xr.Dataset, var_name: str) -> xr.DataArray:
     return ds['flag'].sel(f_string=ds[var_name].qcindex)
 
 def to_samos_netcdf(ds: xr.Dataset, filepath, format = 'NETCDF3_CLASSIC', time_units = 'minutes since 1980-1-1 0:0:0', fix_dims = True, **kwargs):
@@ -175,4 +197,4 @@ if __name__ == '__main__':
 
     print(ds)
 
-    print(flag_summary(ds))
+    print(ds_flag_summary(ds))
