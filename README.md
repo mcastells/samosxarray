@@ -24,7 +24,7 @@ This module simplifies reading and writing SAMOS netcdf files using xarray.
 
     import samosxarray.samosxarray as sx
     
-* See samosxarray_demo.py for examples of reading a SAMOS .nc, making calculations, changing flag values, writing a SAMOS .nc.
+* See demo.ipynb or demo.py for examples of reading a SAMOS .nc, making calculations, changing flag values, writing a SAMOS .nc.
 
 ### Who do I talk to? ###
 
